@@ -11,10 +11,11 @@ import picocli.CommandLine.Option;
 
 @Command(
         name = "print",
-        aliases = { "p" },
+        aliases = { "p", "format" },
         description = { "", "Prints the xml in one line or indented. "
                 + "Indentation is by stripping the empty spaces around tags, not inside",
-                "" })
+                "" },
+        mixinStandardHelpOptions = true)
 //TODO: Add parameters for whether indented or not?
 //TODO: Add parameters for indent depth, deep copy or not
 public class PrintCommand implements Callable<Integer> {
@@ -39,9 +40,11 @@ public class PrintCommand implements Callable<Integer> {
         Reader reader = CliUtils.getInputFileOrStdin(inputFilePath);
         XmlOperations op = new XmlOperations();
         Document document = op.readXmlDom(reader);
-        String printXml = op.printXml(document, true, 2, false);
+        reader.close();
+        String printXml = op.printXml(document, 2, false);
         Writer writer = CliUtils.getOutputFileOrStdout(outputFilePath);
         writer.write(printXml);
+        writer.close();
         return 0;
     }
 

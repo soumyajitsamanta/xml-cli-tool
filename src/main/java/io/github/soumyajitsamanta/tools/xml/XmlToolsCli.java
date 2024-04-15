@@ -11,7 +11,8 @@ import picocli.CommandLine.Command;
 @Command(
         name = "xmltoolsj",
         subcommands = { XpathQueryCommand.class, PrintCommand.class },
-        mixinStandardHelpOptions = true)
+        mixinStandardHelpOptions = true,
+        description = "XML tools for command line created in Java.")
 public class XmlToolsCli {
     public static void main(String[] args) {
         int execute = new CommandLine(XmlToolsCli.class).execute(args);

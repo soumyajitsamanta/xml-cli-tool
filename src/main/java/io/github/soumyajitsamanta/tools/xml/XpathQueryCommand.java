@@ -53,19 +53,17 @@ public class XpathQueryCommand implements Callable<Integer> {
         final Document document = op.readXmlDom(r);
         final List<Node> list =
                 op.findElementsByXpath(document, xpathExpression);
+        r.close();
         final Document outputDocument = op.createDefaultDocument();
-        if (list.size() == 1) {
-            op.appendChild(outputDocument, list.get(0), false);
-        } else {
-            final Element rootElement = outputDocument.createElement("result");
-            op.appendChild(outputDocument, rootElement, true);
-            op.appendChild(rootElement, list, false);
-        }
+        final Element rootElement = outputDocument.createElement("result");
+        op.appendChild(outputDocument, rootElement, true);
+        op.appendChild(rootElement, list, false);
 
-        final String printXml = op.printXml(outputDocument, true, 2, false);
+        final String printXml = op.printXml(outputDocument, 2, false);
 
         final Writer writer = CliUtils.getOutputFileOrStdout(outputFilePath);
         writer.write(printXml);
+        writer.close();
         return 0;
     }
 

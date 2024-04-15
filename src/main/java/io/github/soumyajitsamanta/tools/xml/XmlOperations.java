@@ -53,20 +53,18 @@ public class XmlOperations {
      * @return
      * @throws TransformerException
      */
-    public String printXml(final Node node, final boolean isIndented,
+    public String printXml(final Node node,
             final int indentWidth, final boolean printDeclaration)
             throws TransformerException {
         try {
             removeWhitespace(node);
         } catch (final XPathExpressionException e1) {
             System.err.println("printXml failed. There was error removing the "
-                    + "whitespace around "
-                    + "tags. Ignoring error and printing anyways as not fatal "
-                    + "error.");
+                    + "whitespace around tags. Printing with spaces.");
         }
 
         try {
-            return toString(node, isIndented, indentWidth, printDeclaration);
+            return toString(node, indentWidth, printDeclaration);
         } catch (final TransformerFactoryConfigurationError e) {
             System.err.println(
                     "printXml failed. Could not convert document to string.");
@@ -104,10 +102,40 @@ public class XmlOperations {
     public Document readXmlDom(final Reader input)
             throws SAXException, IOException, ParserConfigurationException {
         try {
-            final DocumentBuilder documentBuilder =
-                    DocumentBuilderFactory.newInstance().newDocumentBuilder();
-            final Document document =
-                    documentBuilder.parse(new InputSource(input));
+            final Document document = DocumentBuilderFactory.newInstance()
+                    .newDocumentBuilder().parse(new InputSource(input));
+            document.normalize();
+            return document;
+        } catch (final SAXException e) {
+            System.err.println("parseXml failed. SAX Parser exception.");
+            throw e;
+        } catch (final IOException e) {
+            System.err.println("parseXml failed. Input read exception.");
+            throw e;
+        } catch (final ParserConfigurationException e) {
+            System.err.println("parseXml failed. Parse configuration wrong.");
+            throw e;
+        }
+    }
+
+    /**
+     * Reads XML with into a document using namespace aware document builder. Rest same as 
+     * readXmlDom
+     * 
+     * @param input
+     * @return
+     * @throws SAXException
+     * @throws IOException
+     * @throws ParserConfigurationException
+     */
+    public Document readXmlDomWithNamespace(final Reader input)
+            throws SAXException, IOException, ParserConfigurationException {
+        try {
+            DocumentBuilderFactory documentBuilderFactory =
+                    DocumentBuilderFactory.newInstance();
+            documentBuilderFactory.setNamespaceAware(true);
+            final Document document = documentBuilderFactory
+                    .newDocumentBuilder().parse(new InputSource(input));
             document.normalize();
             return document;
         } catch (final SAXException e) {
@@ -134,7 +162,7 @@ public class XmlOperations {
      * @throws TransformerFactoryConfigurationError
      * @throws TransformerException
      */
-    private String toString(final Node node, final boolean shouldIndent,
+    private String toString(final Node node,
             final int indentWidth, final boolean printDeclaration)
             throws TransformerFactoryConfigurationError, TransformerException {
         try {
@@ -147,7 +175,7 @@ public class XmlOperations {
             transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION,
                     printDeclaration ? "no" : "yes");
             transformer.setOutputProperty(OutputKeys.INDENT,
-                    shouldIndent ? "yes" : "no");
+                    indentWidth > 0 ? "yes" : "no");
             transformer.transform(new DOMSource(node), new StreamResult(out));
             return out.toString();
         } catch (final TransformerConfigurationException e) {
@@ -295,7 +323,7 @@ public class XmlOperations {
     }
 
     public void transformWithXslt(final Reader xsltInput, final Node node,
-            final Writer output, final boolean shouldIndent,
+            final Writer output,
             final int indentWidth, final boolean printDeclaration) {
         try {
             final TransformerFactory transformerFactory =
@@ -310,13 +338,19 @@ public class XmlOperations {
             final Transformer transformer = transformerFactory
                     .newTransformer(new StreamSource(xsltInput));
             transformer.setOutputProperty(OutputKeys.INDENT,
-                    shouldIndent ? "yes" : "no");
+                    indentWidth > 0 ? "yes" : "no");
             transformer.setOutputProperty(OutputKeys.STANDALONE, "no");
             transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
             transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION,
                     printDeclaration ? "no" : "yes");
             transformer.transform(new DOMSource(node),
                     new StreamResult(output));
+            try {
+                output.flush();
+                output.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         } catch (final TransformerConfigurationException e) {
             e.printStackTrace();
         } catch (final TransformerFactoryConfigurationError e) {
